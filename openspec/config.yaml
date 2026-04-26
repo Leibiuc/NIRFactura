@@ -1,0 +1,7 @@
+schema: spec-driven
+
+context: |
+  Read `openspec/project.md` for the authoritative project context: tech stack,
+  code style, architecture patterns, testing strategy, git workflow, domain
+  concepts, constraints, and external dependencies. Apply those conventions
+  when generating artifacts for this project.
