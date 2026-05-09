@@ -7,7 +7,7 @@ const styles: Record<Variant, string> = {
   heading: "text-2xl font-bold text-gray-900",
   subheading: "text-sm text-gray-500",
   body: "text-sm text-gray-700",
-  muted: "text-sm text-gray-400",
+  muted: "text-sm text-gray-500",
 };
 
 interface Props {

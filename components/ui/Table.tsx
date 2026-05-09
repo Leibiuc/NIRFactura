@@ -2,7 +2,7 @@ import { cn } from "./cn";
 
 export function TableRoot({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
       <table className="w-full text-sm border-collapse">{children}</table>
     </div>
   );

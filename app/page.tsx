@@ -62,7 +62,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-[#f5f5f0]">
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between">
           <div>

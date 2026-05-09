@@ -53,7 +53,7 @@ export default function UploadInvoice({ onFileSelect, loading, error }: Props) {
           "border-2 border-dashed rounded-xl p-10 text-center transition-colors",
           dragging
             ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 hover:border-blue-400 hover:bg-gray-50",
+            : "border-gray-300 hover:border-blue-400 hover:bg-white",
           loading && "opacity-50 cursor-not-allowed"
         )}
       >

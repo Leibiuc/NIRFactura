@@ -134,7 +134,7 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
             const c = computeRow(item);
             return (
               <Tr key={idx} className="hover:bg-gray-50">
-                <Td className="text-center text-gray-400">{idx + 1}</Td>
+                <Td className="text-center text-gray-500">{idx + 1}</Td>
                 <Td className="px-1">
                   <Input
                     variant="cell"
