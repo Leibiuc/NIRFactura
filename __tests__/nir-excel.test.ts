@@ -13,8 +13,24 @@ const BASE_INPUT: NirInput = {
   transport_means: "SC TRANSPORT SRL",
   currency: "RON",
   items: [
-    { name: "APA PLATA 2L", quantity: 12, unit: "buc", purchase_price: 4.5, vat_rate: 19, markup_percent: 25, sale_price: 5.625 },
-    { name: "LAPTE 1L", quantity: 6, unit: "buc", purchase_price: 5.2, vat_rate: 9, markup_percent: 20, sale_price: 6.24 },
+    {
+      name: "APA PLATA 2L",
+      quantity: 12,
+      unit: "buc",
+      purchase_price: 4.5,
+      vat_rate: 19,
+      markup_percent: 25,
+      sale_price: 5.625,
+    },
+    {
+      name: "LAPTE 1L",
+      quantity: 6,
+      unit: "buc",
+      purchase_price: 5.2,
+      vat_rate: 9,
+      markup_percent: 20,
+      sale_price: 6.24,
+    },
   ],
 };
 
@@ -100,7 +116,16 @@ describe("generateNirExcel", () => {
   it("derives sale_price from markup_percent when sale_price is missing", async () => {
     const input: NirInput = {
       ...BASE_INPUT,
-      items: [{ name: "PRODUS", quantity: 2, unit: "buc", purchase_price: 10, vat_rate: 19, markup_percent: 50 }],
+      items: [
+        {
+          name: "PRODUS",
+          quantity: 2,
+          unit: "buc",
+          purchase_price: 10,
+          vat_rate: 19,
+          markup_percent: 50,
+        },
+      ],
     };
     const buf = await generateNirExcel(input);
     const ws = await parseWorkbook(buf);
