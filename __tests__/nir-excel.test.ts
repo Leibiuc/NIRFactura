@@ -36,6 +36,7 @@ const BASE_INPUT: NirInput = {
 
 async function parseWorkbook(buffer: Buffer) {
   const wb = new ExcelJS.Workbook();
+  // @ts-expect-error: ExcelJS types predate TypeScript 6 Buffer generics
   await wb.xlsx.load(buffer);
   return wb.getWorksheet("NIR")!;
 }

@@ -131,5 +131,5 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
   });
 
   const buf = await wb.xlsx.writeBuffer();
-  return Buffer.from(buf);
+  return Buffer.from(buf) as Buffer;
 }
