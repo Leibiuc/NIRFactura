@@ -5,6 +5,7 @@ import UploadInvoice from "@/components/UploadInvoice";
 import InvoiceReviewTable from "@/components/InvoiceReviewTable";
 import GenerateNirButton from "@/components/GenerateNirButton";
 import type { ExtractedInvoice, NirInput } from "@/types/invoice";
+import { Button, Text } from "@/components/ui";
 
 type Stage = "idle" | "uploading" | "review";
 
@@ -65,13 +66,13 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">NIRFactura</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Factura → NIR Excel in secunde</p>
+            <Text as="h1" variant="heading">NIRFactura</Text>
+            <Text variant="subheading">Factura → NIR Excel in secunde</Text>
           </div>
           {stage === "review" && (
-            <button onClick={reset} className="text-sm text-gray-500 hover:text-gray-700 underline">
+            <Button variant="ghost" onClick={reset}>
               Incarca alta factura
-            </button>
+            </Button>
           )}
         </div>
 
