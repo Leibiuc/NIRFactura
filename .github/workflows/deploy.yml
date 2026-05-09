@@ -6,7 +6,6 @@ on:
 
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
 
 jobs:
   ci-deploy:
@@ -15,6 +14,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Debug token
+        run: echo "VERCEL_TOKEN=$VERCEL_TOKEN"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
