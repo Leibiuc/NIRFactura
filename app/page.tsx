@@ -63,19 +63,24 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#f5f5f0]">
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <Text as="h1" variant="heading">NIRFactura</Text>
-            <Text variant="subheading">Factura → NIR Excel in secunde</Text>
-          </div>
+
+      {/* Header */}
+      <header className="bg-[#f5f5f0] border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-10 text-center relative">
+          <Text as="h1" variant="heading">NIRFactura</Text>
+          <Text variant="subheading" className="mt-2">Factura → NIR Excel in secunde</Text>
           {stage === "review" && (
-            <Button variant="ghost" onClick={reset}>
-              Incarca alta factura
-            </Button>
+            <div className="absolute right-6 top-1/2 -translate-y-1/2">
+              <Button variant="ghost" onClick={reset}>
+                Incarca alta factura
+              </Button>
+            </div>
           )}
         </div>
+      </header>
 
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">
         {stage !== "review" && (
           <UploadInvoice
             onFileSelect={handleFile}
@@ -85,14 +90,15 @@ export default function Home() {
         )}
 
         {stage === "review" && nirData && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <InvoiceReviewTable data={nirData} onChange={setNirData} />
-            <div className="border-t border-gray-200 pt-6">
+            <div className="border-t border-gray-200 pt-8">
               <GenerateNirButton data={nirData} />
             </div>
           </div>
         )}
       </div>
+
     </main>
   );
 }

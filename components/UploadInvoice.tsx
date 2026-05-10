@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn, Button, ErrorMessage, Text } from "@/components/ui";
+import { cn, Button, ErrorMessage, Spinner, Text } from "@/components/ui";
 
 interface Props {
   onFileSelect: (file: File) => void;
@@ -50,11 +50,12 @@ export default function UploadInvoice({ onFileSelect, loading, error }: Props) {
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         className={cn(
-          "border-2 border-dashed rounded-xl p-10 text-center transition-colors",
-          dragging
+          "border-2 border-dashed rounded-2xl p-16 text-center transition-colors",
+          loading
+            ? "border-blue-400 bg-blue-50 cursor-not-allowed animate-pulse"
+            : dragging
             ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 hover:border-blue-400 hover:bg-white",
-          loading && "opacity-50 cursor-not-allowed"
+            : "border-gray-300 hover:border-blue-400 hover:bg-white"
         )}
       >
         <input
@@ -65,39 +66,47 @@ export default function UploadInvoice({ onFileSelect, loading, error }: Props) {
           onChange={onInputChange}
           disabled={loading}
         />
-        <div className="flex flex-col items-center gap-3">
-          <svg
-            className="w-12 h-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-            />
-          </svg>
+        <div className="flex flex-col items-center gap-4">
           {loading ? (
-            <Text
-              variant="body"
-              className="text-blue-600 font-medium animate-pulse"
-            >
-              Procesam factura...
-            </Text>
-          ) : selectedFile ? (
-            <Text variant="body" className="text-green-600 font-medium">
-              {selectedFile}
-            </Text>
+            <>
+              <Spinner className="w-14 h-14 text-blue-500" />
+              <Text variant="body" className="text-blue-600 font-semibold">
+                Procesam factura…
+              </Text>
+              <Text variant="muted">Acest proces poate dura cateva secunde</Text>
+            </>
           ) : (
             <>
-              <Text variant="body" className="text-gray-600 font-medium">
-                Incarca factura
-              </Text>
-              <Text variant="muted">
-                JPG, PNG sau PDF &mdash; max {MAX_MB}MB
-              </Text>
+              <svg
+                className={cn(
+                  "w-16 h-16 transition-colors",
+                  selectedFile ? "text-green-500" : "text-gray-400"
+                )}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                />
+              </svg>
+              {selectedFile ? (
+                <Text variant="body" className="text-green-600 font-medium">
+                  {selectedFile}
+                </Text>
+              ) : (
+                <>
+                  <Text variant="body" className="text-gray-600 font-medium">
+                    Incarca factura
+                  </Text>
+                  <Text variant="muted">
+                    JPG, PNG sau PDF &mdash; max {MAX_MB}MB
+                  </Text>
+                </>
+              )}
             </>
           )}
         </div>

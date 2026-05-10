@@ -4,9 +4,9 @@ type Variant = "heading" | "subheading" | "body" | "muted";
 type Tag = "p" | "h1" | "h2" | "h3" | "span" | "div";
 
 const styles: Record<Variant, string> = {
-  heading: "text-2xl font-bold text-gray-900",
-  subheading: "text-sm text-gray-500",
-  body: "text-sm text-gray-700",
+  heading: "text-4xl font-bold text-gray-900",
+  subheading: "text-base text-gray-500",
+  body: "text-base text-gray-700",
   muted: "text-sm text-gray-500",
 };
 
