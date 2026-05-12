@@ -21,7 +21,12 @@ function extractedToNirInput(extracted: ExtractedInvoice): NirInput {
     delegate_name: extracted.delegate_name,
     transport_means: extracted.transport_means,
     currency: extracted.currency ?? "RON",
-    items: extracted.items.map((item) => ({ ...item, name: item.raw_name })),
+    items: extracted.items.map((item) => ({
+      ...item,
+      name: item.raw_name,
+      vat_rate: item.vat_rate ?? 21,
+      markup_percent: item.markup_percent ?? 20,
+    })),
   };
 }
 

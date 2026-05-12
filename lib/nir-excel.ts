@@ -4,16 +4,17 @@ import type { NirInput, InvoiceItem } from "@/types/invoice";
 function computeRow(item: InvoiceItem) {
   const qty = item.quantity ?? 0;
   const price = item.purchase_price ?? 0;
-  const vatRate = item.vat_rate ?? 0;
-  const markup = item.markup_percent ?? 0;
-  const salePrice = item.sale_price ?? (markup > 0 ? price * (1 + markup / 100) : 0);
+  const vatRate = item.vat_rate ?? 21;
+  const markup = item.markup_percent ?? 20;
+  const price_with_vat = price * (1 + vatRate / 100);
+  const salePrice = item.sale_price ?? (markup > 0 ? price_with_vat * (1 + markup / 100) : 0);
 
   const value_without_vat = qty * price;
   const deductible_vat = value_without_vat * vatRate / 100;
-  const value_with_markup = value_without_vat * (1 + markup / 100);
+  const value_with_vat = value_without_vat + deductible_vat;
   const sale_value = qty * salePrice;
 
-  return { qty, price, vatRate, markup, salePrice, value_without_vat, deductible_vat, value_with_markup, sale_value };
+  return { qty, price, price_with_vat, vatRate, markup, salePrice, value_without_vat, deductible_vat, value_with_vat, sale_value };
 }
 
 export async function generateNirExcel(input: NirInput): Promise<Buffer> {
@@ -26,8 +27,9 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
     { key: "um", width: 8 },
     { key: "qty", width: 10 },
     { key: "purchase_price", width: 14 },
+    { key: "price_with_vat", width: 14 },
     { key: "value_without_vat", width: 16 },
-    { key: "value_with_markup", width: 16 },
+    { key: "value_with_vat", width: 16 },
     { key: "deductible_vat", width: 14 },
     { key: "sale_price", width: 14 },
     { key: "sale_value", width: 18 },
@@ -36,7 +38,7 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
 
   const titleRow = ws.addRow(["NOTA DE RECEPTIE"]);
   titleRow.font = { bold: true, size: 14 };
-  ws.mergeCells(`A${titleRow.number}:K${titleRow.number}`);
+  ws.mergeCells(`A${titleRow.number}:L${titleRow.number}`);
   titleRow.alignment = { horizontal: "center" };
 
   ws.addRow([]);
@@ -64,9 +66,10 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
     "UM",
     "Cantitatea",
     "Pret fara TVA",
+    "Pret cu TVA",
     "Valoare fara TVA",
-    "Valoare cu adaos",
-    "TVA deductibila",
+    "Valoare cu TVA",
+    "TVA",
     "Pret de vanzare",
     "Valoare la pret de vanzare",
     "% Adaos comercial",
@@ -82,13 +85,13 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
     cell.alignment = { wrapText: true, horizontal: "center" };
   });
 
-  let totVwv = 0, totDvat = 0, totVwm = 0, totSv = 0;
+  let totVwv = 0, totDvat = 0, totVwvat = 0, totSv = 0;
 
   input.items.forEach((item, idx) => {
     const c = computeRow(item);
     totVwv += c.value_without_vat;
     totDvat += c.deductible_vat;
-    totVwm += c.value_with_markup;
+    totVwvat += c.value_with_vat;
     totSv += c.sale_value;
 
     const dataRow = ws.addRow([
@@ -97,11 +100,12 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
       item.unit ?? "",
       c.qty,
       c.price,
-      +c.value_without_vat.toFixed(2),
-      +c.value_with_markup.toFixed(2),
-      +c.deductible_vat.toFixed(2),
-      +c.salePrice.toFixed(2),
-      +c.sale_value.toFixed(2),
+      +c.price_with_vat.toFixed(1),
+      +c.value_without_vat.toFixed(1),
+      +c.value_with_vat.toFixed(1),
+      +c.deductible_vat.toFixed(1),
+      +c.salePrice.toFixed(1),
+      +c.sale_value.toFixed(1),
       item.markup_percent ?? "",
     ]);
     dataRow.eachCell((cell) => {
@@ -113,12 +117,12 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
   });
 
   const totalRow = ws.addRow([
-    "TOTAL", "", "", "", "",
-    +totVwv.toFixed(2),
-    +totVwm.toFixed(2),
-    +totDvat.toFixed(2),
+    "TOTAL", "", "", "", "", "",
+    +totVwv.toFixed(1),
+    +totVwvat.toFixed(1),
+    +totDvat.toFixed(1),
     "",
-    +totSv.toFixed(2),
+    +totSv.toFixed(1),
     "",
   ]);
   totalRow.font = { bold: true };

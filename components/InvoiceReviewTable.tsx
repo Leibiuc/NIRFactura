@@ -23,20 +23,25 @@ interface Props {
 function computeRow(item: InvoiceItem) {
   const qty = item.quantity ?? 0;
   const price = item.purchase_price ?? 0;
-  const vatRate = item.vat_rate ?? 0;
-  const markup = item.markup_percent ?? 0;
-  const salePrice = item.sale_price ?? (markup > 0 ? price * (1 + markup / 100) : 0);
+  const vatRate = item.vat_rate ?? 21;
+  const markup = item.markup_percent ?? 20;
+  const price_with_vat = price * (1 + vatRate / 100);
+  const salePrice = item.sale_price ?? (markup > 0 ? price_with_vat * (1 + markup / 100) : 0);
+  const value_without_vat = qty * price;
+  const deductible_vat = (value_without_vat * vatRate) / 100;
 
   return {
-    value_without_vat: qty * price,
-    deductible_vat: (qty * price * vatRate) / 100,
-    value_with_markup: qty * price * (1 + markup / 100),
+    price_with_vat,
+    salePrice,
+    value_without_vat,
+    deductible_vat,
+    value_with_vat: value_without_vat + deductible_vat,
     sale_value: qty * salePrice,
   };
 }
 
 function fmt(n: number) {
-  return n.toFixed(2);
+  return n.toFixed(1);
 }
 
 export default function InvoiceReviewTable({ data, onChange }: Props) {
@@ -60,14 +65,18 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
 
       if (field === "markup_percent") {
         const price = items[idx].purchase_price ?? 0;
+        const vatRate = items[idx].vat_rate ?? 21;
+        const priceWithVat = price * (1 + vatRate / 100);
         if (!isNaN(n) && n >= 0) {
-          items[idx].sale_price = parseFloat((price * (1 + n / 100)).toFixed(4));
+          items[idx].sale_price = parseFloat((priceWithVat * (1 + n / 100)).toFixed(4));
         }
       }
       if (field === "sale_price") {
         const price = items[idx].purchase_price ?? 0;
-        if (!isNaN(n) && price > 0) {
-          items[idx].markup_percent = parseFloat(((n / price - 1) * 100).toFixed(2));
+        const vatRate = items[idx].vat_rate ?? 21;
+        const priceWithVat = price * (1 + vatRate / 100);
+        if (!isNaN(n) && priceWithVat > 0) {
+          items[idx].markup_percent = parseFloat(((n / priceWithVat - 1) * 100).toFixed(2));
         }
       }
     } else {
@@ -91,11 +100,11 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
       return {
         value_without_vat: acc.value_without_vat + c.value_without_vat,
         deductible_vat: acc.deductible_vat + c.deductible_vat,
-        value_with_markup: acc.value_with_markup + c.value_with_markup,
+        value_with_vat: acc.value_with_vat + c.value_with_vat,
         sale_value: acc.sale_value + c.sale_value,
       };
     },
-    { value_without_vat: 0, deductible_vat: 0, value_with_markup: 0, sale_value: 0 }
+    { value_without_vat: 0, deductible_vat: 0, value_with_vat: 0, sale_value: 0 }
   );
 
   return (
@@ -119,9 +128,10 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
             <Th className="text-center w-16">UM</Th>
             <Th className="text-right w-20">Cantit.</Th>
             <Th className="text-right w-24">Pret fara TVA</Th>
+            <Th className="text-right w-24 bg-gray-100">Pret cu TVA</Th>
             <Th className="text-right w-24 bg-gray-100">Val. fara TVA</Th>
-            <Th className="text-right w-24 bg-gray-100">Val. cu adaos</Th>
-            <Th className="text-right w-24 bg-gray-100">TVA ded.</Th>
+            <Th className="text-right w-24 bg-gray-100">Val. cu TVA</Th>
+            <Th className="text-right w-24 bg-gray-100">TVA</Th>
             <Th className="text-right w-20">TVA %</Th>
             <Th className="text-right w-20">Adaos %</Th>
             <Th className="text-right w-24">Pret vanzare</Th>
@@ -168,15 +178,16 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
                     onChange={(e) => updateItem(idx, "purchase_price", e.target.value)}
                   />
                 </Td>
+                <Td computed className="text-right">{fmt(c.price_with_vat)}</Td>
                 <Td computed className="text-right">{fmt(c.value_without_vat)}</Td>
-                <Td computed className="text-right">{fmt(c.value_with_markup)}</Td>
+                <Td computed className="text-right">{fmt(c.value_with_vat)}</Td>
                 <Td computed className="text-right">{fmt(c.deductible_vat)}</Td>
                 <Td className="px-1">
                   <Input
                     variant="cell"
                     type="number"
                     className="text-right"
-                    value={item.vat_rate ?? ""}
+                    value={item.vat_rate ?? 21}
                     onChange={(e) => updateItem(idx, "vat_rate", e.target.value)}
                   />
                 </Td>
@@ -194,7 +205,7 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
                     variant="cell"
                     type="number"
                     className="text-right"
-                    value={item.sale_price ?? ""}
+                    value={c.salePrice ? fmt(c.salePrice) : ""}
                     onChange={(e) => updateItem(idx, "sale_price", e.target.value)}
                   />
                 </Td>
@@ -211,8 +222,9 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
         <Tfoot>
           <Tr className="bg-yellow-50 font-semibold text-gray-900">
             <Td colSpan={5} className="text-right">TOTAL</Td>
+            <Td />
             <Td computed className="text-right">{fmt(totals.value_without_vat)}</Td>
-            <Td computed className="text-right">{fmt(totals.value_with_markup)}</Td>
+            <Td computed className="text-right">{fmt(totals.value_with_vat)}</Td>
             <Td computed className="text-right">{fmt(totals.deductible_vat)}</Td>
             <Td colSpan={3} />
             <Td computed className="text-right">{fmt(totals.sale_value)}</Td>
