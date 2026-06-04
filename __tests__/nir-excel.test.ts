@@ -41,6 +41,16 @@ async function parseWorkbook(buffer: Buffer) {
   return wb.getWorksheet("NIR")!;
 }
 
+// The column header spans two rows ("Adaos comercial" → % | Lei), so the first
+// data row is the first row whose Nr. crt. cell (col 1) holds a number.
+function firstDataRow(ws: ExcelJS.Worksheet) {
+  let num = -1;
+  ws.eachRow((row, rowNum) => {
+    if (num === -1 && typeof row.getCell(1).value === "number") num = rowNum;
+  });
+  return ws.getRow(num);
+}
+
 describe("generateNirExcel", () => {
   it("returns a non-empty Buffer", async () => {
     const buf = await generateNirExcel(BASE_INPUT);
@@ -65,47 +75,37 @@ describe("generateNirExcel", () => {
   it("has the correct number of data rows (one per item + header + totals)", async () => {
     const buf = await generateNirExcel(BASE_INPUT);
     const ws = await parseWorkbook(buf);
-    // Find the column-header row by looking for "Denumirea"
-    let headerRowNum = -1;
-    ws.eachRow((row, num) => {
-      row.eachCell((cell) => {
-        if (String(cell.value) === "Denumirea") headerRowNum = num;
-      });
-    });
-    expect(headerRowNum).toBeGreaterThan(0);
+    const dataStart = firstDataRow(ws).number;
+    expect(dataStart).toBeGreaterThan(0);
     // Data rows = items.length, then 1 total row
-    const dataRowNum = headerRowNum + BASE_INPUT.items.length;
-    const totalRowNum = dataRowNum + 1;
+    const totalRowNum = dataStart + BASE_INPUT.items.length;
     expect(ws.rowCount).toBeGreaterThanOrEqual(totalRowNum);
+  });
+
+  it("includes the split 'Adaos comercial' sub-header (% | Lei)", async () => {
+    const buf = await generateNirExcel(BASE_INPUT);
+    const ws = await parseWorkbook(buf);
+    const values: string[] = [];
+    ws.eachRow((row) => row.eachCell((cell) => values.push(String(cell.value))));
+    expect(values).toContain("Adaos comercial");
+    expect(values).toContain("%");
+    expect(values).toContain("Lei");
+    expect(values).toContain("ACHITAT CU");
+    expect(values).toContain("FURNIZORUL");
   });
 
   it("correctly calculates value_without_vat for first item", async () => {
     const buf = await generateNirExcel(BASE_INPUT);
     const ws = await parseWorkbook(buf);
-    // Find header row
-    let headerRowNum = -1;
-    ws.eachRow((row, num) => {
-      row.eachCell((cell) => {
-        if (String(cell.value) === "Denumirea") headerRowNum = num;
-      });
-    });
-    const firstDataRow = ws.getRow(headerRowNum + 1);
     // Col 6 = Valoare fara TVA
-    const valueWithoutVat = Number(firstDataRow.getCell(6).value);
+    const valueWithoutVat = Number(firstDataRow(ws).getCell(6).value);
     expect(valueWithoutVat).toBeCloseTo(12 * 4.5, 2); // 54.00
   });
 
   it("correctly calculates deductible_vat for first item", async () => {
     const buf = await generateNirExcel(BASE_INPUT);
     const ws = await parseWorkbook(buf);
-    let headerRowNum = -1;
-    ws.eachRow((row, num) => {
-      row.eachCell((cell) => {
-        if (String(cell.value) === "Denumirea") headerRowNum = num;
-      });
-    });
-    const firstDataRow = ws.getRow(headerRowNum + 1);
-    const deductibleVat = Number(firstDataRow.getCell(8).value);
+    const deductibleVat = Number(firstDataRow(ws).getCell(8).value);
     expect(deductibleVat).toBeCloseTo(54 * 0.19, 2); // 10.26
   });
 
@@ -130,14 +130,7 @@ describe("generateNirExcel", () => {
     };
     const buf = await generateNirExcel(input);
     const ws = await parseWorkbook(buf);
-    let headerRowNum = -1;
-    ws.eachRow((row, num) => {
-      row.eachCell((cell) => {
-        if (String(cell.value) === "Denumirea") headerRowNum = num;
-      });
-    });
-    const dataRow = ws.getRow(headerRowNum + 1);
-    const saleValue = Number(dataRow.getCell(10).value); // Valoare la pret de vanzare
+    const saleValue = Number(firstDataRow(ws).getCell(10).value); // Valoare la pret de vanzare
     expect(saleValue).toBeCloseTo(2 * 15, 2); // 2 × (10 × 1.5) = 30
   });
 });
