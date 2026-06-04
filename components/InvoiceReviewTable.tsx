@@ -1,6 +1,7 @@
 "use client";
 
 import type { NirInput, InvoiceItem } from "@/types/invoice";
+import { DEFAULT_VAT_RATE, DEFAULT_MARKUP_PERCENT } from "@/lib/constants";
 import {
   Button,
   Card,
@@ -23,8 +24,8 @@ interface Props {
 function computeRow(item: InvoiceItem) {
   const qty = item.quantity ?? 0;
   const price = item.purchase_price ?? 0;
-  const vatRate = item.vat_rate ?? 21;
-  const markup = item.markup_percent ?? 20;
+  const vatRate = item.vat_rate ?? DEFAULT_VAT_RATE;
+  const markup = item.markup_percent ?? DEFAULT_MARKUP_PERCENT;
   const price_with_vat = price * (1 + vatRate / 100);
   const salePrice = item.sale_price ?? (markup > 0 ? price_with_vat * (1 + markup / 100) : 0);
   const value_without_vat = qty * price;

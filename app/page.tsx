@@ -6,6 +6,7 @@ import InvoiceReviewTable from "@/components/InvoiceReviewTable";
 import GenerateNirButton from "@/components/GenerateNirButton";
 import type { ExtractedInvoice, NirInput } from "@/types/invoice";
 import { Button, Text } from "@/components/ui";
+import { DEFAULT_VAT_RATE, DEFAULT_MARKUP_PERCENT } from "@/lib/constants";
 
 type Stage = "idle" | "uploading" | "review";
 
@@ -24,8 +25,8 @@ function extractedToNirInput(extracted: ExtractedInvoice): NirInput {
     items: extracted.items.map((item) => ({
       ...item,
       name: item.raw_name,
-      vat_rate: item.vat_rate ?? 21,
-      markup_percent: item.markup_percent ?? 20,
+      vat_rate: item.vat_rate ?? DEFAULT_VAT_RATE,
+      markup_percent: item.markup_percent ?? DEFAULT_MARKUP_PERCENT,
     })),
   };
 }
