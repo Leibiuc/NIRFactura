@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
-import type { NirInput, InvoiceItem } from "@/types/invoice";
-import { DEFAULT_VAT_RATE, DEFAULT_MARKUP_PERCENT } from "@/lib/constants";
+import type { NirInput } from "@/types/invoice";
+import { computeNirRow } from "@/lib/nir-compute";
 
 // The receiving company (your own firm) is printed top-left on the paper form.
 // It is NOT captured from the supplier invoice — set it here to have it printed.
@@ -20,36 +20,6 @@ const TOTAL_FILL: ExcelJS.Fill = {
   pattern: "solid",
   fgColor: { argb: "FFFFF2CC" },
 };
-
-function computeRow(item: InvoiceItem) {
-  const qty = item.quantity ?? 0;
-  const price = item.purchase_price ?? 0;
-  const vatRate = item.vat_rate ?? DEFAULT_VAT_RATE;
-  const markup = item.markup_percent ?? DEFAULT_MARKUP_PERCENT;
-
-  const value_without_vat = qty * price;
-  const adaos_lei = (value_without_vat * markup) / 100;
-  const value_with_markup = value_without_vat + adaos_lei;
-  const deductible_vat = (value_without_vat * vatRate) / 100;
-
-  const price_with_vat = price * (1 + vatRate / 100);
-  const salePrice =
-    item.sale_price ??
-    (markup > 0 ? price_with_vat * (1 + markup / 100) : price_with_vat);
-  const sale_value = qty * salePrice;
-
-  return {
-    qty,
-    price,
-    markup,
-    value_without_vat,
-    adaos_lei,
-    value_with_markup,
-    deductible_vat,
-    salePrice,
-    sale_value,
-  };
-}
 
 type BoxOpts = {
   bold?: boolean;
@@ -217,7 +187,7 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
     totAdaosLei = 0;
 
   input.items.forEach((item, idx) => {
-    const c = computeRow(item);
+    const c = computeNirRow(item);
     totNoVat += c.value_without_vat;
     totMarkup += c.value_with_markup;
     totVat += c.deductible_vat;
