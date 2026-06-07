@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractInvoiceFromFile } from "@/lib/ocr";
-import { ExtractedInvoiceSchema } from "@/lib/schemas";
 import { MAX_UPLOAD_BYTES } from "@/lib/utils";
 
 export const runtime = "nodejs";
@@ -26,9 +25,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File exceeds size limit." }, { status: 400 });
     }
 
+    // extractInvoiceFromFile already validates against ExtractedInvoiceSchema.
     const extracted = await extractInvoiceFromFile(file);
-    const validated = ExtractedInvoiceSchema.parse(extracted);
-    return NextResponse.json(validated);
+    return NextResponse.json(extracted);
   } catch (err) {
     console.error("process-invoice error:", err);
     return NextResponse.json({ error: "Extraction failed." }, { status: 500 });

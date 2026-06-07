@@ -1,34 +1,14 @@
-export type InvoiceItem = {
-  raw_name?: string;
-  name?: string;
-  quantity?: number;
-  unit?: string;
-  purchase_price?: number;
-  vat_rate?: number;
-  markup_percent?: number;
-  sale_price?: number;
-};
+import type { z } from "zod";
+import {
+  InvoiceItemSchema,
+  ExtractedInvoiceSchema,
+  NirInputSchema,
+} from "@/lib/schemas";
 
-export type ExtractedInvoice = {
-  supplier_name?: string;
-  supplier_fiscal_code?: string;
-  invoice_number?: string;
-  invoice_date?: string;
-  delegate_name?: string;
-  transport_means?: string;
-  currency?: string;
-  items: InvoiceItem[];
-};
-
-export type NirInput = {
-  supplier_name?: string;
-  supplier_fiscal_code?: string;
-  invoice_number?: string;
-  invoice_date?: string;
-  nir_number?: string;
-  nir_date?: string;
-  delegate_name?: string;
-  transport_means?: string;
-  currency?: string;
-  items: InvoiceItem[];
-};
+// Types are derived from the zod schemas (the single source of truth) so the
+// runtime validation and the compile-time types can never drift apart. The
+// value imports above are used only in `typeof` positions, so TS erases them at
+// emit and zod never reaches the client bundle.
+export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
+export type ExtractedInvoice = z.infer<typeof ExtractedInvoiceSchema>;
+export type NirInput = z.infer<typeof NirInputSchema>;

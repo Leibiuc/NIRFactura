@@ -15,6 +15,10 @@ export type NirRow = {
   sale_value: number;
 };
 
+/** Gross unit price: purchase price with VAT added. */
+export const priceWithVat = (price: number, vatRate: number) =>
+  price * (1 + vatRate / 100);
+
 /**
  * Single source of truth for NIR row math, shared by the on-screen review
  * table and the generated Excel so they never drift apart.
@@ -30,7 +34,7 @@ export function computeNirRow(item: InvoiceItem): NirRow {
   const value_with_markup = value_without_vat + adaos_lei;
   const deductible_vat = (value_without_vat * vatRate) / 100;
 
-  const price_with_vat = price * (1 + vatRate / 100);
+  const price_with_vat = priceWithVat(price, vatRate);
   const salePrice =
     item.sale_price ??
     (markup > 0 ? price_with_vat * (1 + markup / 100) : price_with_vat);

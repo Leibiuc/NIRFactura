@@ -2,7 +2,7 @@
 
 import type { NirInput, InvoiceItem } from "@/types/invoice";
 import { DEFAULT_VAT_RATE } from "@/lib/constants";
-import { computeNirRow } from "@/lib/nir-compute";
+import { computeNirRow, priceWithVat } from "@/lib/nir-compute";
 import {
   Button,
   Card,
@@ -45,21 +45,15 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
       const n = parseFloat(value);
       items[idx] = { ...items[idx], [field]: isNaN(n) ? undefined : n };
 
-      if (field === "markup_percent") {
-        const price = items[idx].purchase_price ?? 0;
-        const vatRate = items[idx].vat_rate ?? DEFAULT_VAT_RATE;
-        const priceWithVat = price * (1 + vatRate / 100);
-        if (!isNaN(n) && n >= 0) {
-          items[idx].sale_price = parseFloat((priceWithVat * (1 + n / 100)).toFixed(4));
-        }
+      const price = items[idx].purchase_price ?? 0;
+      const vatRate = items[idx].vat_rate ?? DEFAULT_VAT_RATE;
+      const gross = priceWithVat(price, vatRate);
+
+      if (field === "markup_percent" && !isNaN(n) && n >= 0) {
+        items[idx].sale_price = parseFloat((gross * (1 + n / 100)).toFixed(4));
       }
-      if (field === "sale_price") {
-        const price = items[idx].purchase_price ?? 0;
-        const vatRate = items[idx].vat_rate ?? DEFAULT_VAT_RATE;
-        const priceWithVat = price * (1 + vatRate / 100);
-        if (!isNaN(n) && priceWithVat > 0) {
-          items[idx].markup_percent = parseFloat(((n / priceWithVat - 1) * 100).toFixed(2));
-        }
+      if (field === "sale_price" && !isNaN(n) && gross > 0) {
+        items[idx].markup_percent = parseFloat(((n / gross - 1) * 100).toFixed(2));
       }
     } else {
       items[idx] = { ...items[idx], [field]: value || undefined };

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { generateNirExcel } from "@/lib/nir-excel";
 import { NirInputSchema } from "@/lib/schemas";
 
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
+    if (err instanceof ZodError) {
+      return NextResponse.json({ error: "Invalid NIR data." }, { status: 400 });
+    }
     console.error("generate-nir error:", err);
     return NextResponse.json({ error: "Excel generation failed." }, { status: 500 });
   }
