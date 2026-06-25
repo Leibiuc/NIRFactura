@@ -94,6 +94,28 @@ describe("generateNirExcel", () => {
     expect(values).toContain("FURNIZORUL");
   });
 
+  it("includes the signature footer (ADMINISTRATOR | GESTIONAR | ÎNTOCMIT)", async () => {
+    const buf = await generateNirExcel(BASE_INPUT);
+    const ws = await parseWorkbook(buf);
+    const values: string[] = [];
+    ws.eachRow((row) => row.eachCell((cell) => values.push(String(cell.value))));
+    expect(values).toContain("ADMINISTRATOR");
+    expect(values).toContain("GESTIONAR");
+    expect(values).toContain("ÎNTOCMIT");
+  });
+
+  it("prints the default receiving company top-left when none is provided", async () => {
+    const buf = await generateNirExcel(BASE_INPUT); // no receiving_company set
+    const ws = await parseWorkbook(buf);
+    expect(String(ws.getRow(2).getCell(1).value)).toBe("S.C. SIMCRIS DARMARKET SRL");
+  });
+
+  it("prints a provided receiving company top-left", async () => {
+    const buf = await generateNirExcel({ ...BASE_INPUT, receiving_company: "SC ALTA FIRMA SRL" });
+    const ws = await parseWorkbook(buf);
+    expect(String(ws.getRow(2).getCell(1).value)).toBe("SC ALTA FIRMA SRL");
+  });
+
   it("correctly calculates value_without_vat for first item", async () => {
     const buf = await generateNirExcel(BASE_INPUT);
     const ws = await parseWorkbook(buf);

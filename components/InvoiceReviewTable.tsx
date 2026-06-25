@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import type { NirInput, InvoiceItem } from "@/types/invoice";
 import { DEFAULT_VAT_RATE } from "@/lib/constants";
 import { computeNirRow, priceWithVat } from "@/lib/nir-compute";
@@ -8,6 +9,7 @@ import {
   Card,
   Field,
   Input,
+  NumberInput,
   TableRoot,
   Thead,
   Tbody,
@@ -15,6 +17,7 @@ import {
   Tr,
   Th,
   Td,
+  cn,
 } from "@/components/ui";
 
 interface Props {
@@ -22,11 +25,78 @@ interface Props {
   onChange: (data: NirInput) => void;
 }
 
-function fmt(n: number) {
-  return n.toFixed(2);
-}
+const fmt = (n: number) => n.toFixed(2);
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+// Column headers, in physical order. The last entry is the delete-button column.
+const COLUMNS: { label: string; className: string }[] = [
+  { label: "Nr. crt.", className: "text-center" },
+  { label: "Denumirea", className: "text-left" },
+  { label: "UM", className: "text-center" },
+  { label: "Cantitatea", className: "text-right" },
+  { label: "Pret fara TVA", className: "text-right" },
+  { label: "Valoare fara TVA", className: "text-right bg-gray-100" },
+  { label: "Valoare cu adaos", className: "text-right bg-gray-100" },
+  { label: "TVA %", className: "text-right" },
+  { label: "TVA deductibil", className: "text-right bg-gray-100" },
+  { label: "Pret de vanzare", className: "text-right" },
+  { label: "Valoare la pret de vanzare", className: "text-right bg-gray-100" },
+  { label: "Adaos %", className: "text-right" },
+  { label: "Adaos Lei", className: "text-right bg-gray-100" },
+  { label: "", className: "" },
+];
+
+const DEFAULT_WIDTHS = [40, 180, 52, 92, 100, 104, 104, 72, 104, 100, 116, 72, 104, 44];
+const MIN_WIDTH = 36;
+const WIDTHS_KEY = "nir-col-widths";
 
 export default function InvoiceReviewTable({ data, onChange }: Props) {
+  // Column widths are user-draggable (like a spreadsheet) and persisted locally.
+  // This table only mounts after an upload (never during SSR), so reading
+  // localStorage in the initializer is safe and avoids a hydration mismatch.
+  const [widths, setWidths] = useState<number[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_WIDTHS;
+    try {
+      const saved = localStorage.getItem(WIDTHS_KEY);
+      if (saved) {
+        const arr = JSON.parse(saved);
+        if (Array.isArray(arr) && arr.length === DEFAULT_WIDTHS.length) {
+          return arr.map(Number);
+        }
+      }
+    } catch {
+      /* ignore unreadable/legacy storage */
+    }
+    return DEFAULT_WIDTHS;
+  });
+  const [resizing, setResizing] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(WIDTHS_KEY, JSON.stringify(widths));
+    } catch {
+      /* storage may be unavailable (private mode); resizing still works */
+    }
+  }, [widths]);
+
+  function startResize(index: number, e: ReactMouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = widths[index];
+    setResizing(true);
+    const onMove = (ev: MouseEvent) => {
+      const next = Math.max(MIN_WIDTH, startW + ev.clientX - startX);
+      setWidths((ws) => ws.map((w, i) => (i === index ? next : w)));
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      setResizing(false);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
   function updateHeader(field: keyof NirInput, value: string) {
     onChange({ ...data, [field]: value || undefined });
   }
@@ -42,7 +112,8 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
     ];
 
     if (numFields.includes(field)) {
-      const n = parseFloat(value);
+      // Accept both "." and "," as the decimal separator.
+      const n = parseFloat(value.replace(",", "."));
       items[idx] = { ...items[idx], [field]: isNaN(n) ? undefined : n };
 
       const price = items[idx].purchase_price ?? 0;
@@ -90,9 +161,12 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
     }
   );
 
+  const tableWidth = widths.reduce((a, b) => a + b, 0);
+
   return (
-    <div className="space-y-6">
+    <div className={cn("space-y-6", resizing && "cursor-col-resize select-none")}>
       <Card className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Field label="Unitatea" value={data.receiving_company} onChange={(v) => updateHeader("receiving_company", v)} />
         <Field label="Furnizor" value={data.supplier_name} onChange={(v) => updateHeader("supplier_name", v)} />
         <Field label="Cod Fiscal" value={data.supplier_fiscal_code} onChange={(v) => updateHeader("supplier_fiscal_code", v)} />
         <Field label="Nr. Factura" value={data.invoice_number} onChange={(v) => updateHeader("invoice_number", v)} />
@@ -103,23 +177,25 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
         <Field label="Mijloc transport" value={data.transport_means} onChange={(v) => updateHeader("transport_means", v)} />
       </Card>
 
-      <TableRoot>
+      <TableRoot style={{ tableLayout: "fixed", width: tableWidth }}>
+        <colgroup>
+          {widths.map((w, i) => (
+            <col key={i} style={{ width: w }} />
+          ))}
+        </colgroup>
         <Thead>
           <Tr className="bg-blue-50 text-gray-700">
-            <Th className="text-center w-8">Nr. crt.</Th>
-            <Th className="text-left min-w-40">Denumirea</Th>
-            <Th className="text-center w-16">UM</Th>
-            <Th className="text-right w-20">Cantitatea</Th>
-            <Th className="text-right w-24">Pret fara TVA</Th>
-            <Th className="text-right w-24 bg-gray-100">Valoare fara TVA</Th>
-            <Th className="text-right w-24 bg-gray-100">Valoare cu adaos</Th>
-            <Th className="text-right w-20">TVA %</Th>
-            <Th className="text-right w-24 bg-gray-100">TVA deductibil</Th>
-            <Th className="text-right w-24">Pret de vanzare</Th>
-            <Th className="text-right w-24 bg-gray-100">Valoare la pret de vanzare</Th>
-            <Th className="text-right w-20">Adaos %</Th>
-            <Th className="text-right w-24 bg-gray-100">Adaos Lei</Th>
-            <Th className="w-8" />
+            {COLUMNS.map((col, i) => (
+              <Th key={i} className={cn("relative", col.className)}>
+                {col.label}
+                {i < COLUMNS.length - 1 && (
+                  <span
+                    onMouseDown={(e) => startResize(i, e)}
+                    className="absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize select-none hover:bg-blue-400"
+                  />
+                )}
+              </Th>
+            ))}
           </Tr>
         </Thead>
         <Tbody>
@@ -144,53 +220,26 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
                   />
                 </Td>
                 <Td className="px-1">
-                  <Input
-                    variant="cell"
-                    type="number"
-                    className="text-right"
-                    value={item.quantity ?? ""}
-                    onChange={(e) => updateItem(idx, "quantity", e.target.value)}
-                  />
+                  <NumberInput value={item.quantity} onCommit={(v) => updateItem(idx, "quantity", v)} />
                 </Td>
                 <Td className="px-1">
-                  <Input
-                    variant="cell"
-                    type="number"
-                    className="text-right"
-                    value={item.purchase_price ?? ""}
-                    onChange={(e) => updateItem(idx, "purchase_price", e.target.value)}
-                  />
+                  <NumberInput value={item.purchase_price} onCommit={(v) => updateItem(idx, "purchase_price", v)} />
                 </Td>
                 <Td computed className="text-right">{fmt(c.value_without_vat)}</Td>
                 <Td computed className="text-right">{fmt(c.value_with_markup)}</Td>
                 <Td className="px-1">
-                  <Input
-                    variant="cell"
-                    type="number"
-                    className="text-right"
-                    value={item.vat_rate ?? DEFAULT_VAT_RATE}
-                    onChange={(e) => updateItem(idx, "vat_rate", e.target.value)}
-                  />
+                  <NumberInput value={item.vat_rate ?? DEFAULT_VAT_RATE} onCommit={(v) => updateItem(idx, "vat_rate", v)} />
                 </Td>
                 <Td computed className="text-right">{fmt(c.deductible_vat)}</Td>
                 <Td className="px-1">
-                  <Input
-                    variant="cell"
-                    type="number"
-                    className="text-right"
-                    value={c.salePrice ? fmt(c.salePrice) : ""}
-                    onChange={(e) => updateItem(idx, "sale_price", e.target.value)}
+                  <NumberInput
+                    value={c.salePrice ? round2(c.salePrice) : undefined}
+                    onCommit={(v) => updateItem(idx, "sale_price", v)}
                   />
                 </Td>
                 <Td computed className="text-right">{fmt(c.sale_value)}</Td>
                 <Td className="px-1">
-                  <Input
-                    variant="cell"
-                    type="number"
-                    className="text-right"
-                    value={item.markup_percent ?? ""}
-                    onChange={(e) => updateItem(idx, "markup_percent", e.target.value)}
-                  />
+                  <NumberInput value={item.markup_percent} onCommit={(v) => updateItem(idx, "markup_percent", v)} />
                 </Td>
                 <Td computed className="text-right">{fmt(c.adaos_lei)}</Td>
                 <Td className="text-center">

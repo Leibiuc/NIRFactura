@@ -1,10 +1,7 @@
 import ExcelJS from "exceljs";
 import type { NirInput } from "@/types/invoice";
 import { computeNirRow } from "@/lib/nir-compute";
-
-// The receiving company (your own firm) is printed top-left on the paper form.
-// It is NOT captured from the supplier invoice — set it here to have it printed.
-const RECEIVING_COMPANY = "";
+import { DEFAULT_RECEIVING_COMPANY } from "@/lib/constants";
 
 const NUM_FMT = "#,##0.00";
 
@@ -90,7 +87,10 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
     align: "center",
     border: false,
   });
-  box(2, 1, 2, 4, RECEIVING_COMPANY, { bold: true, border: false });
+  box(2, 1, 2, 4, input.receiving_company || DEFAULT_RECEIVING_COMPANY, {
+    bold: true,
+    border: false,
+  });
   box(
     2,
     9,
@@ -227,6 +227,16 @@ export async function generateNirExcel(input: NirInput): Promise<Buffer> {
   box(cur, 10, cur, 10, round2(totSaleValue), totFmt);
   box(cur, 11, cur, 11, "", { bold: true, fill: TOTAL_FILL });
   box(cur, 12, cur, 12, round2(totAdaosLei), totFmt);
+
+  // ── Signature footer ──────────────────────────────────────────────────────
+  // Blank band for signatures, then the three roles across the bottom, matching
+  // the paper form: ADMINISTRATOR left, GESTIONAR center-right, ÎNTOCMIT right.
+  const sigSpace = cur + 1; // blank row left open for signatures
+  ws.getRow(sigSpace).height = 36;
+  const sigRow = cur + 2;
+  box(sigRow, 1, sigRow, 4, "ADMINISTRATOR", { bold: true, align: "center", border: false });
+  box(sigRow, 7, sigRow, 9, "GESTIONAR", { bold: true, align: "center", border: false });
+  box(sigRow, 10, sigRow, 12, "ÎNTOCMIT", { bold: true, align: "center", border: false });
 
   const buf = await wb.xlsx.writeBuffer();
   return Buffer.from(buf) as Buffer;

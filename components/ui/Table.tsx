@@ -1,9 +1,20 @@
 import { cn } from "./cn";
 
-export function TableRoot({ children }: { children: React.ReactNode }) {
+export function TableRoot({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-      <table className="w-full text-sm border-collapse">{children}</table>
+      <table
+        className={cn("text-sm border-collapse", !style?.width && "w-full")}
+        style={style}
+      >
+        {children}
+      </table>
     </div>
   );
 }

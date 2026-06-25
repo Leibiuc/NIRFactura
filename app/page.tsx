@@ -6,13 +6,18 @@ import InvoiceReviewTable from "@/components/InvoiceReviewTable";
 import GenerateNirButton from "@/components/GenerateNirButton";
 import type { ExtractedInvoice, NirInput } from "@/types/invoice";
 import { Button, Text } from "@/components/ui";
-import { DEFAULT_VAT_RATE, DEFAULT_MARKUP_PERCENT } from "@/lib/constants";
+import {
+  DEFAULT_VAT_RATE,
+  DEFAULT_MARKUP_PERCENT,
+  DEFAULT_RECEIVING_COMPANY,
+} from "@/lib/constants";
 
 type Stage = "idle" | "uploading" | "review";
 
 function extractedToNirInput(extracted: ExtractedInvoice): NirInput {
   const today = new Date().toISOString().split("T")[0];
   return {
+    receiving_company: DEFAULT_RECEIVING_COMPANY,
     supplier_name: extracted.supplier_name,
     supplier_fiscal_code: extracted.supplier_fiscal_code,
     invoice_number: extracted.invoice_number,

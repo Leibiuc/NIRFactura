@@ -23,6 +23,7 @@ export const ExtractedInvoiceSchema = z.object({
 });
 
 export const NirInputSchema = z.object({
+  receiving_company: z.string().optional(),
   supplier_name: z.string().optional(),
   supplier_fiscal_code: z.string().optional(),
   invoice_number: z.string().optional(),
