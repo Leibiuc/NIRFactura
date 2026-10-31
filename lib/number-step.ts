@@ -8,6 +8,16 @@ export function parseDecimal(s: string): number | undefined {
 }
 
 /**
+ * Filter raw cell input down to digits and a single "." or "," separator.
+ * Returns null when the input holds more than one separator, so the caller can
+ * reject it: guessing would turn a pasted "1.234,50" into 1.2345.
+ */
+export function sanitizeDecimal(s: string): string | null {
+  const cleaned = s.replace(/[^\d.,]/g, "");
+  return (cleaned.match(/[.,]/g)?.length ?? 0) > 1 ? null : cleaned;
+}
+
+/**
  * Step `v` by `step` in direction `dir`, snapping irregular fractions to the
  * grid first: an off-grid value (e.g. 0.28 with step 0.5) jumps to the nearest
  * grid value in the pressed direction (up → 0.5, down → 0.0); an on-grid value
