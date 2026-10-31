@@ -482,7 +482,7 @@ value_with_markup   = value_without_vat × (1 + markup_percent / 100)
 sale_value          = quantity × sale_price
 ```
 
-`sale_price` is user-entered or derived as: `purchase_price × (1 + markup_percent / 100)` when not provided directly.
+`sale_price` is user-entered or derived as: `purchase_price × (1 + vat_rate / 100) × (1 + markup_percent / 100)` when not provided directly (the sale price includes VAT).
 
 ### Footer totals
 

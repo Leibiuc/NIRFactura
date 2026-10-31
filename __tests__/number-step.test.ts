@@ -1,4 +1,4 @@
-import { parseDecimal, snapStep } from "@/lib/number-step";
+import { parseDecimal, sanitizeDecimal, snapStep } from "@/lib/number-step";
 
 // step/min match how NumberInput drives the NIR cells (0.5 step, clamp at 0).
 const up = (v: number) => snapStep(v, 1, 0.5, 0);
@@ -46,5 +46,29 @@ describe("parseDecimal", () => {
   it("returns undefined for non-numeric input", () => {
     expect(parseDecimal("")).toBeUndefined();
     expect(parseDecimal("abc")).toBeUndefined();
+  });
+});
+
+describe("sanitizeDecimal", () => {
+  it("keeps digits and a single separator", () => {
+    expect(sanitizeDecimal("217")).toBe("217");
+    expect(sanitizeDecimal("217.96")).toBe("217.96");
+    expect(sanitizeDecimal("217,96")).toBe("217,96");
+    expect(sanitizeDecimal("5.")).toBe("5.");
+    expect(sanitizeDecimal("")).toBe("");
+  });
+
+  it("drops letters, symbols, spaces and minus signs", () => {
+    expect(sanitizeDecimal("12a")).toBe("12");
+    expect(sanitizeDecimal("abc")).toBe("");
+    expect(sanitizeDecimal("-5")).toBe("5");
+    expect(sanitizeDecimal("1e5")).toBe("15");
+    expect(sanitizeDecimal(" 12,50 lei")).toBe("12,50");
+  });
+
+  it("rejects input with more than one separator", () => {
+    expect(sanitizeDecimal("1.2.")).toBeNull();
+    expect(sanitizeDecimal("1.5,")).toBeNull();
+    expect(sanitizeDecimal("1.234,50")).toBeNull();
   });
 });

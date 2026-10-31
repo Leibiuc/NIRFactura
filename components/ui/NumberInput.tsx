@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { parseDecimal, snapStep } from "@/lib/number-step";
+import { parseDecimal, sanitizeDecimal, snapStep } from "@/lib/number-step";
 import { cn } from "./cn";
 import { Input } from "./Input";
 
@@ -18,8 +18,9 @@ interface Props {
 const show = (v: number | undefined) => (v == null ? "" : String(v));
 
 /**
- * Spreadsheet-style numeric cell: fully free-form text entry (so partial input
- * like "5." and decimal commas survive keystrokes), with up/down arrows — both
+ * Spreadsheet-style numeric cell: text entry limited to digits and one decimal
+ * separator (so partial input like "5." and decimal commas survive keystrokes,
+ * while letters and other symbols are dropped), with up/down arrows — both
  * the keyboard keys and the hover spinner — stepping by `step` (default 0.5).
  */
 export function NumberInput({ value, onCommit, min = 0, step = 0.5, className }: Props) {
@@ -44,8 +45,10 @@ export function NumberInput({ value, onCommit, min = 0, step = 0.5, className }:
         className={cn("pr-4 text-right", className)}
         value={display}
         onChange={(e) => {
-          setDraft(e.target.value);
-          onCommit(e.target.value);
+          const clean = sanitizeDecimal(e.target.value);
+          if (clean === null) return;
+          setDraft(clean);
+          onCommit(clean);
         }}
         onBlur={() => setDraft(null)}
         onKeyDown={(e) => {
@@ -55,6 +58,10 @@ export function NumberInput({ value, onCommit, min = 0, step = 0.5, className }:
           } else if (e.key === "ArrowDown") {
             e.preventDefault();
             stepBy(-1);
+          } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !/[\d.,]/.test(e.key)) {
+            // Stop stray keys here so the caret stays put; onChange still
+            // filters whatever gets past this (paste, drag and drop).
+            e.preventDefault();
           }
         }}
       />

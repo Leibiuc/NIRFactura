@@ -5,7 +5,7 @@ import UploadInvoice from "@/components/UploadInvoice";
 import InvoiceReviewTable from "@/components/InvoiceReviewTable";
 import GenerateNirButton from "@/components/GenerateNirButton";
 import type { ExtractedInvoice, NirInput } from "@/types/invoice";
-import { Button, Text } from "@/components/ui";
+import { Button, Text, cn } from "@/components/ui";
 import {
   DEFAULT_VAT_RATE,
   DEFAULT_MARKUP_PERCENT,
@@ -91,7 +91,7 @@ export default function Home() {
       </header>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">
+      <div className={cn("mx-auto px-6 py-12 space-y-10", stage !== "review" && "max-w-7xl")}>
         {stage !== "review" && (
           <UploadInvoice
             onFileSelect={handleFile}

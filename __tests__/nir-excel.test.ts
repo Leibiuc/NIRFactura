@@ -153,6 +153,6 @@ describe("generateNirExcel", () => {
     const buf = await generateNirExcel(input);
     const ws = await parseWorkbook(buf);
     const saleValue = Number(firstDataRow(ws).getCell(10).value); // Valoare la pret de vanzare
-    expect(saleValue).toBeCloseTo(2 * 15, 2); // 2 × (10 × 1.5) = 30
+    expect(saleValue).toBeCloseTo(2 * 10 * 1.19 * 1.5, 2); // 2 × (10 × 1.19 VAT × 1.5 markup) = 35.7
   });
 });

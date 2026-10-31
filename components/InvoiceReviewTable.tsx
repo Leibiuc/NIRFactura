@@ -28,7 +28,7 @@ interface Props {
 const fmt = (n: number) => n.toFixed(2);
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-// Column headers, in physical order. The last entry is the delete-button column.
+// Column headers, in physical order. Mirrors the paper NIR form exactly.
 const COLUMNS: { label: string; className: string }[] = [
   { label: "Nr. crt.", className: "text-center" },
   { label: "Denumirea", className: "text-left" },
@@ -37,16 +37,14 @@ const COLUMNS: { label: string; className: string }[] = [
   { label: "Pret fara TVA", className: "text-right" },
   { label: "Valoare fara TVA", className: "text-right bg-gray-100" },
   { label: "Valoare cu adaos", className: "text-right bg-gray-100" },
-  { label: "TVA %", className: "text-right" },
   { label: "TVA deductibil", className: "text-right bg-gray-100" },
   { label: "Pret de vanzare", className: "text-right" },
   { label: "Valoare la pret de vanzare", className: "text-right bg-gray-100" },
   { label: "Adaos %", className: "text-right" },
   { label: "Adaos Lei", className: "text-right bg-gray-100" },
-  { label: "", className: "" },
 ];
 
-const DEFAULT_WIDTHS = [40, 180, 52, 92, 100, 104, 104, 72, 104, 100, 116, 72, 104, 44];
+const DEFAULT_WIDTHS = [40, 180, 52, 92, 100, 104, 104, 104, 100, 116, 72, 104];
 const MIN_WIDTH = 36;
 const WIDTHS_KEY = "nir-col-widths";
 
@@ -106,7 +104,6 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
     const numFields: (keyof InvoiceItem)[] = [
       "quantity",
       "purchase_price",
-      "vat_rate",
       "markup_percent",
       "sale_price",
     ];
@@ -177,7 +174,7 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
         <Field label="Mijloc transport" value={data.transport_means} onChange={(v) => updateHeader("transport_means", v)} />
       </Card>
 
-      <TableRoot style={{ tableLayout: "fixed", width: tableWidth }}>
+      <TableRoot style={{ tableLayout: "fixed", width: tableWidth, minWidth: "100%" }}>
         <colgroup>
           {widths.map((w, i) => (
             <col key={i} style={{ width: w }} />
@@ -188,12 +185,10 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
             {COLUMNS.map((col, i) => (
               <Th key={i} className={cn("relative", col.className)}>
                 {col.label}
-                {i < COLUMNS.length - 1 && (
-                  <span
-                    onMouseDown={(e) => startResize(i, e)}
-                    className="absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize select-none hover:bg-blue-400"
-                  />
-                )}
+                <span
+                  onMouseDown={(e) => startResize(i, e)}
+                  className="absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize select-none hover:bg-blue-400"
+                />
               </Th>
             ))}
           </Tr>
@@ -202,8 +197,20 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
           {data.items.map((item, idx) => {
             const c = computeNirRow(item);
             return (
-              <Tr key={idx} className="hover:bg-gray-50">
-                <Td className="text-center text-gray-500">{idx + 1}</Td>
+              <Tr key={idx} className="group hover:bg-gray-50">
+                {/* The form has no delete column, so the row number swaps to ✕ on hover. */}
+                <Td className="relative text-center text-gray-500">
+                  <span className="group-hover:invisible">{idx + 1}</span>
+                  <Button
+                    variant="danger"
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                    onClick={() => removeRow(idx)}
+                    title="Sterge randul"
+                    aria-label={`Sterge randul ${idx + 1}`}
+                  >
+                    ✕
+                  </Button>
+                </Td>
                 <Td className="px-1">
                   <Input
                     variant="cell"
@@ -227,9 +234,6 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
                 </Td>
                 <Td computed className="text-right">{fmt(c.value_without_vat)}</Td>
                 <Td computed className="text-right">{fmt(c.value_with_markup)}</Td>
-                <Td className="px-1">
-                  <NumberInput value={item.vat_rate ?? DEFAULT_VAT_RATE} onCommit={(v) => updateItem(idx, "vat_rate", v)} />
-                </Td>
                 <Td computed className="text-right">{fmt(c.deductible_vat)}</Td>
                 <Td className="px-1">
                   <NumberInput
@@ -242,11 +246,6 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
                   <NumberInput value={item.markup_percent} onCommit={(v) => updateItem(idx, "markup_percent", v)} />
                 </Td>
                 <Td computed className="text-right">{fmt(c.adaos_lei)}</Td>
-                <Td className="text-center">
-                  <Button variant="danger" onClick={() => removeRow(idx)} title="Sterge randul">
-                    ✕
-                  </Button>
-                </Td>
               </Tr>
             );
           })}
@@ -256,13 +255,11 @@ export default function InvoiceReviewTable({ data, onChange }: Props) {
             <Td colSpan={5} className="text-right">TOTAL</Td>
             <Td computed className="text-right">{fmt(totals.value_without_vat)}</Td>
             <Td computed className="text-right">{fmt(totals.value_with_markup)}</Td>
-            <Td />
             <Td computed className="text-right">{fmt(totals.deductible_vat)}</Td>
             <Td />
             <Td computed className="text-right">{fmt(totals.sale_value)}</Td>
             <Td />
             <Td computed className="text-right">{fmt(totals.adaos_lei)}</Td>
-            <Td />
           </Tr>
         </Tfoot>
       </TableRoot>
